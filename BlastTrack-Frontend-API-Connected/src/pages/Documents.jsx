@@ -1,0 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
+import PageHeader from "../components/PageHeader";
+import TableToolbar from "../components/TableToolbar";
+import Icon from "../components/Icon";
+import { documentsApi } from "../services/api";
+export default function Documents(){
+ const [rows,setRows]=useState([]),[search,setSearch]=useState(""),[type,setType]=useState("All types"),[error,setError]=useState(""),[loading,setLoading]=useState(true);
+ useEffect(()=>{documentsApi.list().then(r=>setRows(r.data)).catch(e=>setError(e?.response?.data?.message||"Could not load documents.")).finally(()=>setLoading(false))},[]);
+ const filtered=useMemo(()=>rows.filter(x=>`${x.name} ${x.operation} ${x.type}`.toLowerCase().includes(search.toLowerCase())&&(type==="All types"||x.type===type)),[rows,search,type]);
+ return <div><PageHeader eyebrow="FILES" title="Documents" description="View administrative files uploaded against completed records."/>{error&&<div className="notice"><Icon name="shield"/><span>{error}</span></div>}<section className="panel table-panel"><TableToolbar search={search} setSearch={setSearch} placeholder="Search documents..."><select className="select" value={type} onChange={e=>setType(e.target.value)}><option>All types</option><option>Operation Report</option><option>Site Photograph</option><option>Safety Document</option></select></TableToolbar><div className="table-wrap"><table><thead><tr><th>Document</th><th>Operation ID</th><th>Uploaded By</th><th>Upload Date</th><th>Document Type</th><th></th></tr></thead><tbody>{loading?<tr><td colSpan="6">Loading...</td></tr>:filtered.map(x=><tr key={`${x.name}-${x.operation}`}><td><div className="file-cell"><div className="file-icon"><Icon name="file"/></div><div><strong>{x.name}</strong><span>Administrative attachment</span></div></div></td><td>{x.operation}</td><td>{x.by}</td><td>{x.date}</td><td>{x.type}</td><td>{x.url?<a className="btn tiny secondary" href={x.url} target="_blank" rel="noreferrer"><Icon name="eye" size={15}/> View</a>:<button className="btn tiny secondary" disabled>View</button>}</td></tr>)}</tbody></table></div><div className="table-foot"><span>{filtered.length} documents</span><span className="demo-label">Live API</span></div></section></div>;
+}
